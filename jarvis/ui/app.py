@@ -16,6 +16,7 @@ import config
 from core.jarvis import jarvis
 from core.wake_word import wake_detector
 from core.updater import updater
+from ui.components import AnimatedBackground, MagneticButton
 
 # Notification ovozlari
 try:
@@ -204,10 +205,23 @@ class ChatMessage(ctk.CTkFrame):
         )
         self.message.pack(anchor="w", padx=15, pady=(2, 12))
         
-        # Vaqt (kichik)
+        # Vaqt
         time_str = datetime.now().strftime("%H:%M")
-        time_lbl = ctk.CTkLabel(self, text=time_str, font=ctk.CTkFont(size=9), text_color="#555577")
-        time_lbl.pack(side="bottom", anchor="e", padx=10, pady=(0, 5))
+        self.time_lbl = ctk.CTkLabel(self, text=time_str, font=ctk.CTkFont(size=9), text_color="#555577")
+        self.time_lbl.pack(side="bottom", anchor="e", padx=10, pady=(0, 5))
+        
+        # Animation state
+        self.is_user = is_user
+        self.v_offset = 20
+        self.opacity = 0.0
+
+    def animate_entry(self):
+        """Silliq paydo bo'lish animatsiyasi"""
+        if self.v_offset > 0:
+            self.v_offset -= 4
+            # CTK da haqiqiy opacity yo'q, lekin biz padding orqali slide-up simulatsiya qilamiz
+            self.pack_configure(pady=(5 + self.v_offset, 5))
+            self.after(20, self.animate_entry)
 
 
 class JarvisApp(ctk.CTk):
@@ -230,6 +244,7 @@ class JarvisApp(ctk.CTk):
         self.is_recording = False
         self.chat_history = []
         self.settings_window = None
+        self.typing_msg = None
         
         # UI
         self._create_ui()
@@ -330,8 +345,13 @@ class JarvisApp(ctk.CTk):
         ).pack(side="left", padx=10)
 
     def _create_ui(self):
-        """Ultra-premium UI yaratish"""
+        """Ultra-premium V3 UI yaratish"""
         self.current_layout = None 
+        
+        # ========== ANIMATED BACKGROUND (V3) ==========
+        self.bg_anim = AnimatedBackground(self)
+        self.bg_anim.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.bg_anim.start()
         
         # ========== TOP BAR (Neon Crystal) ==========
         self.top_bar = ctk.CTkFrame(self, fg_color=GLASS_BG, height=65, corner_radius=0)
@@ -401,8 +421,8 @@ class JarvisApp(ctk.CTk):
                                       text_color=NEON_CYAN)
         self.status_text.pack(anchor="w")
         
-        # Buttons (Redesigned)
-        self.mic_btn = ctk.CTkButton(self.left_panel, text="⬛ PRIMARY MIC", 
+        # Buttons (Redesigned with Magnetic effect)
+        self.mic_btn = MagneticButton(self.left_panel, text="⬛ PRIMARY MIC", 
                                     font=ctk.CTkFont(size=16, weight="bold"),
                                     width=220, height=60, corner_radius=15, 
                                     fg_color=config.PRIMARY_COLOR, text_color="#000000",
@@ -605,7 +625,15 @@ class JarvisApp(ctk.CTk):
         def process():
             text = jarvis.stop_listening()
             if text:
+                self.after(0, lambda: self._add_chat_message(text, is_user=True))
+                # Typing indicator ko'rsatish
+                self.after(0, self._show_typing)
+                
                 response = jarvis.process_command(text)
+                
+                # Typing indicatorni o'chirish va javobni qo'shish
+                self.after(0, self._hide_typing)
+                self.after(0, lambda: self._add_chat_message(response, is_user=False))
                 self.after(0, lambda: jarvis.speak(response, self._on_speak_done))
             else:
                 self.after(0, lambda: self._update_status("Eshitmadim", "#FF4444"))
@@ -613,6 +641,19 @@ class JarvisApp(ctk.CTk):
                 self.after(0, self._resume_wake_word)
         
         threading.Thread(target=process, daemon=True).start()
+
+    def _show_typing(self):
+        """Jarvis o'ylayotganini ko'rsatish"""
+        self._hide_typing()
+        self.typing_msg = ChatMessage(self.chat_scroll, "...", is_user=False)
+        self.typing_msg.pack(fill="x", pady=5, padx=5, anchor="w")
+        self.typing_msg.animate_entry()
+        
+    def _hide_typing(self):
+        """Typing indicatorni yashirish"""
+        if self.typing_msg:
+            self.typing_msg.destroy()
+            self.typing_msg = None
     
     def _on_speak_done(self):
         """Gapirish tugaganda"""
@@ -626,9 +667,15 @@ class JarvisApp(ctk.CTk):
     def _quick_command(self, cmd: str):
         """Tezkor buyruq"""
         self._add_chat_message(cmd, is_user=True)
-        response = jarvis.process_command(cmd)
-        self._add_chat_message(response, is_user=False)
-        jarvis.speak(response)
+        self._show_typing()
+        
+        def process():
+            response = jarvis.process_command(cmd)
+            self.after(0, self._hide_typing)
+            self.after(0, lambda: self._add_chat_message(response, is_user=False))
+            jarvis.speak(response)
+            
+        threading.Thread(target=process, daemon=True).start()
     
     def _on_listening_start(self):
         self.after(0, lambda: self.orb.start_animation("listening"))
@@ -656,13 +703,15 @@ class JarvisApp(ctk.CTk):
         self.status_glow.configure(fg_color=color)
     
     def _add_chat_message(self, text: str, is_user: bool):
-        """Chat xabar qo'shish"""
+        """Chat xabar qo'shish - Animatsiya bilan"""
         msg = ChatMessage(self.chat_scroll, text, is_user)
         msg.pack(fill="x", pady=5, padx=5, anchor="e" if is_user else "w")
+        msg.animate_entry() # V3 Animatsiyasi
+        
         self.chat_history.append({"role": "user" if is_user else "assistant", "text": text})
         
         # Scroll pastga
-        self.chat_scroll._parent_canvas.yview_moveto(1.0)
+        self.after(100, lambda: self.chat_scroll._parent_canvas.yview_moveto(1.0))
     
     def _check_updates(self):
         """Yangilanishni orqa fonda tekshirish"""
