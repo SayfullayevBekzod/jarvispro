@@ -2,8 +2,11 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*' # Masalan v1.0.1 tag push qilinganda ishlaydi
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
 
 jobs:
   build:
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,9 +31,23 @@ jobs:
           pip install -r jarvis/requirements.txt
           pip install pyinstaller requests packaging pillow CustomTkinter pygame
 
+      - name: Auto-bump version
+        id: bump
+        run: |
+          python bump_version.py
+          $VER = python -c "import sys; sys.path.insert(0, './jarvis'); import config; print(config.APP_VERSION)"
+          echo "NEW_VER=$VER" >> $env:GITHUB_OUTPUT
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add jarvis/config.py
+          git commit -m "Auto-bump version to v${{ steps.bump.outputs.NEW_VER }} [skip ci]"
+          git push origin main
+
       - name: Build EXE
         run: python compile.py
-        # compile.py o'zi JarvisPro_v1_0_0.exe kabi nomlaydi
 
       - name: Generate version.json
         run: python generate_version.py
@@ -39,8 +58,9 @@ jobs:
           files: |
             dist/*.exe
             version.json
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag_name: v${{ steps.bump.outputs.NEW_VER }}
+          name: Release v${{ steps.bump.outputs.NEW_VER }}
+          body: "Push orqali avtomatik yaratilgan reliz."
           draft: false
           prerelease: false
         env:
