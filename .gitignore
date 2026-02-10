@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.env
+
+# Distribution
+dist/
+build/
+*.spec
+
+# System
+.idea/
+.vscode/
+.antigravity/
+mock_version.json
+test_update.py
+compile.py.bak
