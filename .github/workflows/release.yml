@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Masalan v1.0.1 tag push qilinganda ishlaydi
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r jarvis/requirements.txt
+          pip install pyinstaller requests packaging pillow CustomTkinter pygame
+
+      - name: Build EXE
+        run: python compile.py
+        # compile.py o'zi JarvisPro_v1_0_0.exe kabi nomlaydi
+
+      - name: Generate version.json
+        run: python generate_version.py
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            version.json
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

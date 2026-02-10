@@ -22,8 +22,8 @@ JARVIS_NAME = "Jarvis"
 JARVIS_WAKE_WORDS = ["jarvis", "жарвис", "jarvi", "alisa", "алиса", "alica", "джарвис", "jarvisuz", "hello jarvis", "jar", "jori", 'ja']
 LANGUAGE = "uz"
 APP_VERSION = "1.0.0"
-UPDATE_URL = "https://raw.githubusercontent.com/yousufbek/jarvis-updates/main/version.json" # Mock URL
-REPO_URL = "https://github.com/yousufbek/jarvis"
+UPDATE_URL = "https://raw.githubusercontent.com/SayfullayevBekzod/jarvispro/main/version.json"
+REPO_URL = "https://github.com/SayfullayevBekzod/jarvispro"
 
 # Ovoz Sozlamalari
 VOICE_SPEED = 1.0
