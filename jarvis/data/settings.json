@@ -3,7 +3,7 @@
   "voice_speed": 2.0,
   "voice_volume": 1.0,
   "default_city": "Toshkent",
-  "theme": "light",
+  "theme": "dark",
   "autostart": true,
   "alice_mode": true
 }

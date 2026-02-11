@@ -713,6 +713,13 @@ class JarvisApp(ctk.CTk):
         # Scroll pastga
         self.after(100, lambda: self.chat_scroll._parent_canvas.yview_moveto(1.0))
     
+    def _clear_chat(self):
+        """Chatni tozalash"""
+        for widget in self.chat_scroll.winfo_children():
+            widget.destroy()
+        self.chat_history = []
+        self._add_chat_message(f"JARVIS ONLINE. Chat cleared. How shall we proceed?", is_user=False)
+    
     def _check_updates(self):
         """Yangilanishni orqa fonda tekshirish"""
         def thread_func():

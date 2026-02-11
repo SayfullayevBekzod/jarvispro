@@ -27,6 +27,7 @@ class CommandType(Enum):
     SMART = "smart"  # hazil, motivatsiya, faktlar
     SOCIAL = "social"  # ijtimoiy tarmoqlar
     KEYBOARD = "keyboard"  # Yangi: yozish, clipboard
+    DICTATION = "dictation" # Yangi: diktovka rejimi
     UNKNOWN = "unknown"
 
 
@@ -55,27 +56,27 @@ class CommandParser:
             "ovoz", "ovozni", "batareya", "akkumulyator", "skrinshot", "screenshot",
             "kompyuter", "yorqinlik", "yorug'lik", "brightness",
             "oyna", "qulfla", "uxla", "shutdown", "restart", "hibernate",
-            "chiqindi", "savatcha", "minimize",
+            "chiqindi", "savatcha", "minimize", "volume", "sound",
             # Harakatlar
             "ko'tar", "baland", "oshir", "pasayt", "kamayt", "o'chir",
-            "kuchaytir", "maksimum", "mute", "unmute",
-            "och", "ochib", "yop", "yopib", "ishga", "tushir",
+            "kuchaytir", "maksimum", "mute", "unmute", "turn", "up", "down", "off", "on",
+            "och", "ochib", "yop", "yopib", "ishga", "tushir", "open", "close", "start", "run",
             # Vaqt/sana
-            "soat", "vaqt", "sana", "bugun", "hafta",
+            "soat", "vaqt", "sana", "bugun", "hafta", "time", "date", "today",
             # Salomlashish
-            "salom", "hayrli", "rahmat", "xayr",
+            "salom", "hayrli", "rahmat", "xayr", "hello", "hi", "thanks", "goodbye",
             # Boshqa
-            "qidir", "izla", "search", "google", "youtube", "wikipedia",
-            "musiqa", "music", "play", "pause", "pauza",
-            "papka", "folder", "yuklamalar", "downloads", "hujjatlar",
-            "eslatma", "reminder", "taymer", "timer",
-            "hazil", "motivatsiya", "fakt", "parol",
+            "qidir", "izla", "search", "google", "youtube", "wikipedia", "find",
+            "musiqa", "music", "play", "pause", "pauza", "stop", "resume",
+            "papka", "folder", "yuklamalar", "downloads", "hujjatlar", "documents",
+            "eslatma", "reminder", "taymer", "timer", "remind",
+            "hazil", "motivatsiya", "fakt", "parol", "joke", "fact", "password",
             "tarjima", "translate", "telegram", "instagram",
             "nusxa", "copy", "joylashtir", "paste", "saqlash", "save",
-            "jarvis", "dastur", "dasturlar", "process",
+            "jarvis", "dastur", "dasturlar", "process", "app", "apps",
             "internet", "tarmoq", "network", "wifi",
-            "ekran", "kattalashtir", "kichraytir",
-            "ob-havo", "havo", "haqida", "tizim",
+            "ekran", "kattalashtir", "kichraytir", "screen", "zoom",
+            "ob-havo", "havo", "haqida", "tizim", "weather", "about", "system",
         ]
         
         # Tez-tez uchraydigan STT xatolari (qo'lda)
@@ -226,11 +227,11 @@ class CommandParser:
         self.system_patterns = [
             r"kompyuter.*haqida", r"tizim.*ma'lumot",
             r"batareya", r"akkumulyator", r"battery",
-            r"ovoz.*(ko'tar|baland|oshir|qo'sh|up|increase|louder)",
-            r"ovoz.*(pasayt|past|kamayt|ayir|down|decrease|lower)",
-            r"ovoz.*(o'chir|o'chish|yo'qot|mute|off)",
-            r"ovoz.*(yoq|yoqish|unmute|on)",
-            r"ovoz.*(to'liq|maksimum|max|100)",
+            r"ovoz.*(ko'tar|baland|oshir|qo'sh|up|increase|louder|volume.*up|higher)",
+            r"ovoz.*(pasayt|past|kamayt|ayir|down|decrease|lower|volume.*down|quieter)",
+            r"ovoz.*(o'chir|o'chish|yo'qot|mute|off|silence)",
+            r"ovoz.*(yoq|yoqish|unmute|on|sound.*on)",
+            r"ovoz.*(to'liq|maksimum|max|100|full.*volume)",
             r"yorug'lik|yorqinlik|brightness",
             r"oyna.*(kichraytir|yop|berkit|minimize|close)",
             r"chiqindi|savatcha|recycle.*bin|trash",
@@ -333,6 +334,15 @@ class CommandParser:
         # Ijtimoiy tarmoqlar
         self.social_patterns = [
             r"\b(youtube|telegram|instagram|facebook|twitter|tiktok|linkedin|github)\b\s*\b(och|ochib.*ber|ishga.*tushir)\b"
+        ]
+        
+        # Diktovka / Yozish rejimi
+        self.dictation_patterns = [
+            r"yozish.*(rejim|mode).*(yoq|start|boshla|kir)",
+            r"diktovka.*(rejim|mode|yoq|start)",
+            r"dictation.*(mode|start|on)",
+            r"start.*dictation",
+            r"text.*input.*mode"
         ]
 
     @staticmethod
@@ -798,6 +808,16 @@ class CommandParser:
                 return Command(
                     type=CommandType.MEDIA,
                     action=action,
+                    params={},
+                    original_text=text
+                )
+
+        # Diktovka
+        for pattern in self.dictation_patterns:
+            if re.search(pattern, text_lower):
+                return Command(
+                    type=CommandType.DICTATION,
+                    action="enable",
                     params={},
                     original_text=text
                 )

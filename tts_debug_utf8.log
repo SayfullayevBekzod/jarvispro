@@ -1,0 +1,9 @@
+Testing SpeechEngine module integration...
+[Edge TTS] Language: uz, Text: 'Salom, bu test....'
+Result: True
+[Audio] O'ynashga tayyorlanmoqda: C:\Users\WINDOW~1\AppData\Local\Temp\tmp88nj16hg.mp3
+[Audio] Loading C:\Users\WINDOW~1\AppData\Local\Temp\tmp88nj16hg.mp3
+[Audio] Ijro etilmoqda...
+[Audio] Tugadi
+Callback called!
+Done.

@@ -5,6 +5,7 @@ O'zbekcha Speech Engine
 """
 
 import os
+import re
 import io
 import wave
 import base64
@@ -131,15 +132,32 @@ class SpeechEngine:
     
     def _detect_language(self, text: str) -> str:
         """Matn tilini aniqlash (uz yoki en)"""
-        # Oddiy heuristika: ko'p ishlatiladigan inglizcha so'zlar
-        en_words = {"the", "a", "an", "is", "are", "was", "were", "and", "or", "not", "to", "of", "in", "it", "i", "you", "my"}
-        text_words = set(text.lower().split())
+        if not text:
+            return "uz"
+            
+        # Common English filler words and specific terms
+        en_words = {
+            "the", "a", "an", "is", "are", "was", "were", "and", "or", "not", "to", "of", "in", "it", "i", "you", "my",
+            "what", "where", "when", "how", "who", "why", "time", "date", "weather", "open", "close", "start", "run",
+            "volume", "sound", "mute", "unmute", "brightness", "lock", "sleep", "restart", "shutdown", "hello", "hi"
+        }
         
-        # Agar inglizcha so'zlar bo'lsa yoki lotin alifbosi (O'zbekchada ham lotin, lekin En specific so'zlar muhim)
-        if text_words.intersection(en_words):
+        # Uzbek specific words (lotin alifbosida o'ziga xos so'zlar)
+        uz_words = {
+            "soat", "vaqt", "sana", "bugun", "havo", "och", "yop", "ishga", "tushir", "ovoz", "pasayt", "ko'tar",
+            "qanday", "nima", "qayerda", "qachon", "salom", "rahmat", "xayr", "tizim", "ma'lumot"
+        }
+        
+        text_lower = text.lower().strip()
+        words = set(re.findall(r'\b\w+\b', text_lower))
+        
+        en_hits = len(words.intersection(en_words))
+        uz_hits = len(words.intersection(uz_words))
+        
+        if en_hits > uz_hits:
             return "en"
         
-        # O'zbekcha fallback (ko'proq ehtimol)
+        # Default to uz if unsure or more Uzbek hits
         return "uz"
 
     def text_to_speech(self, text: str, callback: Optional[Callable] = None) -> bool:
@@ -176,6 +194,8 @@ class SpeechEngine:
                     self.after_main_thread(lambda: self._play_audio(temp_path, callback))
                     return True
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     print(f"[Edge TTS] Xato: {e}")
                     self.after_main_thread(lambda: self._aivoov_fallback(text, callback))
                     return False
@@ -256,12 +276,8 @@ class SpeechEngine:
                 pygame.mixer.music.set_volume(config.VOICE_VOLUME)
                 pygame.mixer.music.play()
                 
-                print("[Audio] Ijro etilmoqda...")
-                
                 while pygame.mixer.music.get_busy():
                     pygame.time.Clock().tick(10)
-                
-                print("[Audio] Tugadi")
                 
                 try:
                     os.unlink(file_path)

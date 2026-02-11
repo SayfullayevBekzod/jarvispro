@@ -30,6 +30,7 @@ class Jarvis:
         self.name = config.JARVIS_NAME
         self.is_listening = False
         self.is_speaking = False
+        self.in_dictation_mode = False  # New: Dictation Mode state
         self.apps = config.APPS.copy()  # Manual config
         self.folders = config.FOLDERS
         
@@ -149,6 +150,21 @@ class Jarvis:
                     if self.on_text_received:
                         self.on_text_received(text)
                     
+                    # --- DICTATION MODE HANDLING ---
+                    if self.in_dictation_mode:
+                        # Exit command check
+                        exit_triggers = ["to'xtat", "stop", "tugat", "yetadi", "exit dictation"]
+                        if any(trigger in text.lower() for trigger in exit_triggers):
+                            self.in_dictation_mode = False
+                            self.speak("Yozish rejimi to'xtatildi.", on_done_callback)
+                            return
+                        
+                        # Type the text directly
+                        keyboard.type_text_unicode(text + " ")
+                        if on_done_callback: on_done_callback()
+                        return
+                    # -------------------------------
+
                     # 3. Buyruqni bajarish
                     response = self.process_command(text)
                     
@@ -300,6 +316,12 @@ class Jarvis:
         
         elif command.type == CommandType.SOCIAL:
             return web.execute("social", command.params)
+        
+        elif command.type == CommandType.DICTATION:
+            if command.action == "enable":
+                self.in_dictation_mode = True
+                return "Yozish rejimi yoqildi. Gapirganingiz yoziladi. To'xtatish uchun 'Stop' yoki 'To'xtat' deng."
+            return "Diktovka rejimi tushunarsiz."
         
         elif command.type == CommandType.KEYBOARD:
             if command.action == "type_in_app":
