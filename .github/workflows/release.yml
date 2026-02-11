@@ -38,19 +38,19 @@ jobs:
           $VER = python -c "import sys; sys.path.insert(0, './jarvis'); import config; print(config.APP_VERSION)"
           echo "NEW_VER=$VER" >> $env:GITHUB_OUTPUT
 
+      - name: Generate version.json
+        run: python generate_version.py
+
       - name: Commit version bump
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add jarvis/config.py
+          git add jarvis/config.py version.json
           git commit -m "Auto-bump version to v${{ steps.bump.outputs.NEW_VER }} [skip ci]"
           git push origin main
 
       - name: Build EXE
         run: python compile.py
-
-      - name: Generate version.json
-        run: python generate_version.py
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
