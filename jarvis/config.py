@@ -21,7 +21,7 @@ AIVOOV_VOICE_ID = "456d8b4b-9071-4b02-a99a-1eddd22b2880"  # Sardor - erkak
 JARVIS_NAME = "Jarvis"
 JARVIS_WAKE_WORDS = ["jarvis", "жарвис", "jarvi", "alisa", "алиса", "alica", "джарвис", "jarvisuz", "hello jarvis", "jar", "jori", 'ja']
 LANGUAGE = "uz"
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 UPDATE_URL = "https://raw.githubusercontent.com/SayfullayevBekzod/jarvispro/main/version.json"
 REPO_URL = "https://github.com/SayfullayevBekzod/jarvispro"
 
